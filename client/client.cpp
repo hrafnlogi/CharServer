@@ -23,7 +23,6 @@ void *receieveMsg(void *sock)
     while ((len = recv(sockfd, buffer, 256, 0)) > 0)
     {
         buffer[len] = '\0';
-        std::cout << std::endl;
         std::cout << std::string(buffer) << std::endl;
         memset(buffer, '\0', sizeof(buffer));
     }
@@ -78,7 +77,7 @@ int main(int argc, char *argv[])
     // Write to socket
     while (1)
     {
-        printf("> ");
+        //printf("> ");
         bzero(buffer, 256);
         fgets(buffer, 255, stdin);
         n = write(sockfd, buffer, strlen(buffer));

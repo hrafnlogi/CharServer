@@ -1,6 +1,6 @@
 # Chat Server
 
-## Compiling on Linux
+## Compiled on Linux Ubuntu
 
 ### Server
 
@@ -14,7 +14,7 @@
     g++ -pthread client.cpp -o client
 ```
 
-## Running
+## Run
 
 ### Server
 

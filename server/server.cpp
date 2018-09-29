@@ -8,6 +8,9 @@
 #include <sys/select.h>
 #include <iostream>
 #include <arpa/inet.h>
+#include <map>
+
+using namespace std;
 
 void error(const char *msg)
 {
@@ -15,14 +18,21 @@ void error(const char *msg)
     exit(1);
 }
 
-int readClientMessage(int fileDescriptor)
+void sendMessage(int sock, char buffer[])
 {
-    int MAXMSG = 512;
+    int n = write(sock, buffer, strlen(buffer));
+
+    if (n < 0)
+        error("ERROR writing to socket");
+}
+
+int readClientMessage(int sockfd, map<int, int> *users)
+{
+    int receiverSockfd, n, nBytes, MAXMSG = 512;
     char buffer[MAXMSG];
-    int nBytes;
     bzero(buffer, MAXMSG);
 
-    nBytes = read(fileDescriptor, buffer, MAXMSG);
+    nBytes = read(sockfd, buffer, MAXMSG);
 
     if (nBytes < 0)
     {
@@ -38,6 +48,21 @@ int readClientMessage(int fileDescriptor)
     {
         // message read
         fprintf(stderr, "Server: got message: %s", buffer);
+        cout << "Sending to all clients.." << endl;
+        map<int, int>::iterator it;
+        for (it = users->begin(); it != users->end(); it++)
+        {
+            receiverSockfd = it->second;
+            // don't want to send the to the client who sent the message
+            if (receiverSockfd != sockfd)
+            {
+                n = write(receiverSockfd, buffer, strlen(buffer));
+
+                if (n < 0)
+                    error("ERROR writing to socket");
+            }
+        }
+
         return 0;
     }
 }
@@ -75,6 +100,8 @@ int main(int argc, char *argv[])
     struct sockaddr_in clientName;
     fd_set active_fd_set, read_fd_set;
     int n, i;
+    // map client fds with their usernames
+    map<int, int> users;
 
     if (argc < 2)
     {
@@ -98,7 +125,7 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        // block until input arrives on one or more active sockets(clients connected)
+        // block until input arrives on one or more active sockets
         read_fd_set = active_fd_set;
         if (select(FD_SETSIZE, &read_fd_set, NULL, NULL, NULL) < 0)
         {
@@ -129,11 +156,18 @@ int main(int argc, char *argv[])
 
                     // sets the new socket as active in the active_fd_set
                     FD_SET(newSockFd, &active_fd_set);
-                }
+                    cout << "socket: " << newSockFd << endl;
+
+                    users[newSockFd] = newSockFd;
+
+                    char test[] = "Choose username:";
+                    sendMessage(newSockFd, test);
+                    // listen for username?
+                                }
                 else
                 {
                     // message arriving on an already connected socket
-                    if (readClientMessage(i) < 0)
+                    if (readClientMessage(i, &users) < 0)
                     {
                         close(i);
                         FD_CLR(i, &active_fd_set);
