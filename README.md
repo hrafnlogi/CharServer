@@ -1,20 +1,28 @@
 # Chat Server
 
-## Compiling
+## Compiling on Linux
+
+### Server
 
 ```
-    compile instructions here
+    g++ server.cpp -o server
+```
+
+### Client
+
+```
+    g++ -pthread client.cpp -o client
 ```
 
 ## Running
 
-### server
+### Server
 
 ```
     server run instructions here
 ```
 
-### client
+### Client
 
 ```
     client run instructions here

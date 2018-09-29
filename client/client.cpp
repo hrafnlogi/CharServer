@@ -6,11 +6,27 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <pthread.h>
+#include <iostream>
 
 void error(const char *msg)
 {
     perror(msg);
     exit(0);
+}
+void *receieveMsg(void *sock)
+{
+    int sockfd = *((int *)sock);
+
+    char buffer[256];
+    int len;
+    while ((len = recv(sockfd, buffer, 256, 0)) > 0)
+    {
+        buffer[len] = '\0';
+        std::cout << std::endl;
+        std::cout << std::string(buffer) << std::endl;
+        memset(buffer, '\0', sizeof(buffer));
+    }
 }
 
 int main(int argc, char *argv[])
@@ -18,6 +34,7 @@ int main(int argc, char *argv[])
     int sockfd, portno, n;
     struct sockaddr_in serv_addr; // Socket address structure
     struct hostent *server;
+    pthread_t receiveThread; // thread for listening to incoming messages from server
 
     char buffer[256];
     if (argc < 3)
@@ -55,10 +72,13 @@ int main(int argc, char *argv[])
     if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
         error("ERROR connecting");
 
-    // Read and write to socket
+    // create thread that will listen for incoming messages
+    pthread_create(&receiveThread, NULL, receieveMsg, &sockfd);
+
+    // Write to socket
     while (1)
     {
-        printf("Please enter the message: ");
+        printf("> ");
         bzero(buffer, 256);
         fgets(buffer, 255, stdin);
         n = write(sockfd, buffer, strlen(buffer));
@@ -66,6 +86,8 @@ int main(int argc, char *argv[])
         if (n < 0)
             error("ERROR writing to socket");
     }
+
+    pthread_join(receiveThread, NULL);
     close(sockfd);
     return 0;
 }
