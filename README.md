@@ -4,14 +4,18 @@
 
 ```
     compile instructions here
-
 ```
 
 ## Running
 
-###
+### server
 
 ```
-    run instructions here
+    server run instructions here
+```
 
+### client
+
+```
+    client run instructions here
 ```
