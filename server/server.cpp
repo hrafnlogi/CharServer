@@ -20,6 +20,7 @@ int readClientMessage(int fileDescriptor)
     int MAXMSG = 512;
     char buffer[MAXMSG];
     int nBytes;
+    bzero(buffer, MAXMSG);
 
     nBytes = read(fileDescriptor, buffer, MAXMSG);
 
@@ -36,7 +37,8 @@ int readClientMessage(int fileDescriptor)
     else
     {
         // message read
-        fprintf(stderr, "Server: got message: `%s'\n", buffer);
+        fprintf(stderr, "Server: got message: %s", buffer);
+        return 0;
     }
 }
 
