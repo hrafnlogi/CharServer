@@ -48,6 +48,7 @@ int main(int argc, char *argv[])
 
     Api *api = new Api();
 
+    api->giveServerNewId();
     // our socket
     sockfd = createSocket(portSequence.at(2));
 
@@ -177,10 +178,14 @@ int analyzeMessage(int sockfd, Api *api)
         // message read
         fprintf(stderr, "Server: got message: %s", buffer);
         string checkCommand = string(buffer);
-
-        if (checkCommand.find("ID") != string::npos)
+        if (checkCommand.find("CHANGE ID") != string::npos)
         {
-            // provide a unique ID for the server
+            api->giveServerNewId();
+        }
+        else if (checkCommand.find("ID") != string::npos)
+        {
+            cout << "Server id: " + api->getServerId();
+            //system(command);
         }
         else if (checkCommand.find("CONNECT") != string::npos)
         {
@@ -204,6 +209,7 @@ int analyzeMessage(int sockfd, Api *api)
             // and send
             //api->sendMessageToAll(sockfd, buffer);
         }
+
         else
         {
             cout << "No command selected, sending to everybody" << endl;
