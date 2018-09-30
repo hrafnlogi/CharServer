@@ -23,42 +23,51 @@ int createSocket(uint16_t port);
 
 int main(int argc, char *argv[])
 {
+    // vector of ints to know the order of ports tried
+    // for the port knocker
+    vector<int> portWatcher = {-1, -1};
+
+    // this is the correct port sequence to connect to the server
+    vector<int> portSequence = {23001, 23002, 23003};
+
     string userName;
-    int sockfd, portNumber;
+
+    int sockfd, sockfd2, sockfd3;
+    int portNumber, portNumber2, portNumber3;
+    int n, i;
+
     socklen_t clientLength;
     char buffer[256];
     struct sockaddr_in clientName;
     fd_set active_fd_set, read_fd_set;
-    int n, i;
+
     // map client usernames to their sockets
     map<string, int> usersToSockets;
     // map sockets to usernames
     map<int, string> socketsToUsers;
 
-    // TESTING API
     Api *api = new Api();
 
-    //
+    // our socket
+    sockfd = createSocket(portSequence.at(2));
 
-    if (argc < 2)
-    {
-        fprintf(stderr, "ERROR, no port provided\n");
-        exit(1);
-    }
+    sockfd2 = createSocket(portSequence.at(0));
+    sockfd3 = createSocket(portSequence.at(1));
 
-    portNumber = atoi(argv[1]);
-
-    sockfd = createSocket(portNumber);
-
-    // Listen on socket for traffic
-    if (listen(sockfd, 5) < 0)
+    // Listen on sockets for traffic, sockfd is our server and
+    // the other two are the ports a client needs to go to first
+    // to be able to connect to us
+    if (listen(sockfd, 5) < 0 || listen(sockfd2, 5) < 0 || listen(sockfd3, 5) < 0)
     {
         perror("select");
         exit(EXIT_FAILURE);
     }
 
+    // zero out the active fd set, then set the bits for our sockets
     FD_ZERO(&active_fd_set);
     FD_SET(sockfd, &active_fd_set);
+    FD_SET(sockfd2, &active_fd_set);
+    FD_SET(sockfd3, &active_fd_set);
 
     while (1)
     {
@@ -74,36 +83,55 @@ int main(int argc, char *argv[])
         {
             if (FD_ISSET(i, &read_fd_set))
             {
-                if (i == sockfd)
+                // first port in the sequence a client needs to visit
+                if (i == sockfd2)
                 {
-                    // connection request on original socket
-                    int newSockFd;
-                    clientLength = sizeof(clientName);
-                    newSockFd = accept(sockfd, (struct sockaddr *)&clientName, &clientLength);
-
-                    if (newSockFd < 0)
+                    FD_CLR(i, &active_fd_set);
+                    portWatcher.push_back(23001);
+                }
+                // second port in the sequence a client needs to visit
+                else if (i == sockfd3)
+                {
+                    FD_CLR(i, &active_fd_set);
+                    portWatcher.push_back(23002);
+                }
+                // our server socket, check if the client went through the
+                // right sequence
+                else if (i == sockfd)
+                {
+                    if (api->validPorts(portWatcher))
                     {
-                        perror("accept");
-                        exit(EXIT_FAILURE);
+                        cout << "Valid ports go ahead" << endl;
+
+                        // connection request on original socket
+                        int newSockFd;
+                        clientLength = sizeof(clientName);
+                        newSockFd = accept(sockfd, (struct sockaddr *)&clientName, &clientLength);
+
+                        if (newSockFd < 0)
+                        {
+                            perror("accept");
+                            exit(EXIT_FAILURE);
+                        }
+                        fprintf(stderr,
+                                "Server: connect from host %s, port %hd.\n",
+                                inet_ntoa(clientName.sin_addr),
+                                ntohs(clientName.sin_port));
+
+                        // sets the new socket as active in the active_fd_set
+                        FD_SET(newSockFd, &active_fd_set);
+
+                        char test[] = "Choose username:";
+                        api->sendMessage(sockfd, newSockFd, test);
+                        cout << "listening for username" << endl;
+                        // listen for username
+                        userName = api->receiveMessage(newSockFd);
+                        cout << "USER: " << userName;
+                        // map username to its socket. <USERNAME, SOCKET>
+                        api->addUserToList(userName, newSockFd);
+
+                        // print out commands that are available here
                     }
-                    fprintf(stderr,
-                            "Server: connect from host %s, port %hd.\n",
-                            inet_ntoa(clientName.sin_addr),
-                            ntohs(clientName.sin_port));
-
-                    // sets the new socket as active in the active_fd_set
-                    FD_SET(newSockFd, &active_fd_set);
-
-                    char test[] = "Choose username:";
-                    api->sendMessage(sockfd, newSockFd, test);
-                    cout << "listening for username" << endl;
-                    // listen for username
-                    userName = api->receiveMessage(newSockFd);
-                    cout << "USER: " << userName;
-                    // map username to its socket. <USERNAME, SOCKET>
-                    api->addUserToList(userName, newSockFd);
-
-                    // print out commands that are available here
                 }
                 else
                 {

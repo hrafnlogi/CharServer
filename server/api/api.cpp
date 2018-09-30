@@ -107,3 +107,21 @@ string Api::receiveMessage(int sockfd)
         return string(buffer);
     }
 }
+
+// checks if the sequence of the ports are correct
+bool Api::validPorts(vector<int> ports)
+{
+    int secondLastElement = ports.rbegin()[1];
+    int lastElement = ports.rbegin()[0];
+    if (secondLastElement != 23001)
+    {
+        return false;
+    }
+
+    if (lastElement != 23002)
+    {
+        return false;
+    }
+
+    return true;
+}

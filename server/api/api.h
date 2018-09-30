@@ -37,6 +37,8 @@ public:
   int sendMessageToAll(int from, char buffer[]);
 
   string receiveMessage(int sockfd);
+
+  bool validPorts(vector<int> ports);
 };
 
 #endif

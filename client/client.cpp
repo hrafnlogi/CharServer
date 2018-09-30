@@ -30,23 +30,27 @@ void *receieveMsg(void *sock)
 
 int main(int argc, char *argv[])
 {
-    int sockfd, portno, n;
+    int sockfd1, sockfd2, sockfd3, portno1, portno2, portno3, n;
     struct sockaddr_in serv_addr; // Socket address structure
     struct hostent *server;
     pthread_t receiveThread; // thread for listening to incoming messages from server
 
     char buffer[256];
-    if (argc < 3)
+    if (argc < 5)
     {
-        fprintf(stderr, "usage %s hostname port\n", argv[0]);
+        fprintf(stderr, "usage %s hostname port port port\n", argv[0]);
         exit(0);
     }
 
-    portno = atoi(argv[2]); // Read Port No from command line
+    portno1 = atoi(argv[2]);
+    portno2 = atoi(argv[3]);
+    portno3 = atoi(argv[4]);
 
-    sockfd = socket(AF_INET, SOCK_STREAM, 0); // Open Socket
+    sockfd1 = socket(AF_INET, SOCK_STREAM, 0);
+    sockfd2 = socket(AF_INET, SOCK_STREAM, 0);
+    sockfd3 = socket(AF_INET, SOCK_STREAM, 0);
 
-    if (sockfd < 0)
+    if (sockfd1 < 0)
         error("ERROR opening socket");
 
     server = gethostbyname(argv[1]); // Get host from IP
@@ -66,13 +70,22 @@ int main(int argc, char *argv[])
           (char *)&serv_addr.sin_addr.s_addr,
           server->h_length);
 
-    serv_addr.sin_port = htons(portno);
+    serv_addr.sin_port = htons(portno1);
 
-    if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    if (connect(sockfd1, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
         error("ERROR connecting");
 
+    serv_addr.sin_port = htons(portno2);
+
+    if (connect(sockfd2, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+        error("ERROR connecting");
+
+    serv_addr.sin_port = htons(portno3);
+
+    if (connect(sockfd3, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+        error("ERROR connecting");
     // create thread that will listen for incoming messages
-    pthread_create(&receiveThread, NULL, receieveMsg, &sockfd);
+    pthread_create(&receiveThread, NULL, receieveMsg, &sockfd3);
 
     // Write to socket
     while (1)
@@ -80,13 +93,13 @@ int main(int argc, char *argv[])
         //printf("> ");
         bzero(buffer, 256);
         fgets(buffer, 255, stdin);
-        n = write(sockfd, buffer, strlen(buffer));
+        n = write(sockfd3, buffer, strlen(buffer));
 
         if (n < 0)
             error("ERROR writing to socket");
     }
 
     pthread_join(receiveThread, NULL);
-    close(sockfd);
+    close(sockfd3);
     return 0;
 }
