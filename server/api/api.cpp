@@ -74,8 +74,9 @@ void Api::giveServerNewId()
     string str = "fortune -s";
     string fortuneQuote = exec("fortune -s");
     int randomIdNumber = rand() % 1000000 + 1;
-
-    idOfServer = to_string(randomIdNumber) + " " + fortuneQuote + " group23";
+    auto start = std::chrono::system_clock::now();
+    time_t end_time = std::chrono::system_clock::to_time_t(start);
+    idOfServer = to_string(randomIdNumber) + " " + fortuneQuote + " group23 " + "at " + ctime(&end_time);
 }
 
 // send a message to a single client
