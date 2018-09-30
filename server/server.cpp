@@ -10,6 +10,9 @@
 #include <arpa/inet.h>
 #include <map>
 
+// include the api we created
+#include "api/api.h"
+
 using namespace std;
 
 void error(const char *msg)
@@ -20,17 +23,46 @@ void error(const char *msg)
 
 void sendMessage(int sock, char buffer[])
 {
+
     int n = write(sock, buffer, strlen(buffer));
 
     if (n < 0)
         error("ERROR writing to socket");
 }
 
-int readClientMessage(int sockfd, map<int, int> *users)
+string readUserName(int sockfd)
+{
+    int receiverSockfd, nBytes, MAXMSG = 512;
+    char buffer[MAXMSG];
+    bzero(buffer, MAXMSG);
+    string userName;
+
+    nBytes = read(sockfd, buffer, MAXMSG);
+
+    if (nBytes < 0)
+    {
+        perror("read");
+        exit(EXIT_FAILURE);
+    }
+    else if (nBytes == 0)
+    {
+        // end of file
+    }
+    else
+    {
+        // message read
+        fprintf(stderr, "Server: got username: %s", buffer);
+        // return username
+        return string(buffer);
+    }
+}
+
+int readClientMessage(int sockfd, map<string, int> *usersToSockets)
 {
     int receiverSockfd, n, nBytes, MAXMSG = 512;
     char buffer[MAXMSG];
     bzero(buffer, MAXMSG);
+    string userName;
 
     nBytes = read(sockfd, buffer, MAXMSG);
 
@@ -48,18 +80,27 @@ int readClientMessage(int sockfd, map<int, int> *users)
     {
         // message read
         fprintf(stderr, "Server: got message: %s", buffer);
+        string checkCommand = string(buffer);
+
+        /*switch (checkCommand)
+        {
+        case "WHO":
+            // print out all usernames
+
+            break;
+        }
+        */
+
         cout << "Sending to all clients.." << endl;
-        map<int, int>::iterator it;
-        for (it = users->begin(); it != users->end(); it++)
+        map<string, int>::iterator it;
+        for (it = usersToSockets->begin(); it != usersToSockets->end(); it++)
         {
             receiverSockfd = it->second;
             // don't want to send the to the client who sent the message
             if (receiverSockfd != sockfd)
             {
-                n = write(receiverSockfd, buffer, strlen(buffer));
-
-                if (n < 0)
-                    error("ERROR writing to socket");
+                // get username here,
+                sendMessage(receiverSockfd, buffer);
             }
         }
 
@@ -94,14 +135,22 @@ int createSocket(uint16_t port)
 
 int main(int argc, char *argv[])
 {
+    string userName;
     int sockfd, portNumber;
     socklen_t clientLength;
     char buffer[256];
     struct sockaddr_in clientName;
     fd_set active_fd_set, read_fd_set;
     int n, i;
-    // map client fds with their usernames
-    map<int, int> users;
+    // map client usernames to their sockets
+    map<string, int> usersToSockets;
+    // map sockets to usernames
+    map<int, string> socketsToUsers;
+
+    // TESTING API
+    Api *api = new Api();
+
+    //
 
     if (argc < 2)
     {
@@ -156,18 +205,20 @@ int main(int argc, char *argv[])
 
                     // sets the new socket as active in the active_fd_set
                     FD_SET(newSockFd, &active_fd_set);
-                    cout << "socket: " << newSockFd << endl;
-
-                    users[newSockFd] = newSockFd;
 
                     char test[] = "Choose username:";
-                    sendMessage(newSockFd, test);
-                    // listen for username?
-                                }
+                    api->sendMessage(newSockFd, test);
+                    // listen for username
+                    userName = readUserName(newSockFd);
+                    // map username to its socket. <USERNAME, SOCKET>
+                    usersToSockets[userName] = newSockFd;
+                    // map socket to its user
+                    socketsToUsers[newSockFd] = userName;
+                }
                 else
                 {
                     // message arriving on an already connected socket
-                    if (readClientMessage(i, &users) < 0)
+                    if (readClientMessage(i, &usersToSockets) < 0)
                     {
                         close(i);
                         FD_CLR(i, &active_fd_set);

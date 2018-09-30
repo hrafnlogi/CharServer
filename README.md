@@ -5,7 +5,7 @@
 ### Server
 
 ```
-    g++ server.cpp -o server
+    g++ server.cpp api/api.cpp -o server
 ```
 
 ### Client
