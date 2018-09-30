@@ -149,11 +149,23 @@ int analyzeMessage(int sockfd, Api *api)
         // message read
         fprintf(stderr, "Server: got message: %s", buffer);
         string checkCommand = string(buffer);
-        cout << "is this a command?: " << checkCommand << endl;
 
-        if (checkCommand.find("WHO") != string::npos)
+        if (checkCommand.find("ID") != string::npos)
         {
-            // list all usersnames
+            // provide a unique ID for the server
+        }
+        else if (checkCommand.find("CONNECT") != string::npos)
+        {
+            // CONNECT <USER>
+            // start a chat with a user
+        }
+        else if (checkCommand.find("LEAVE") != string::npos)
+        {
+            // disconnect this user
+        }
+        else if (checkCommand.find("WHO") != string::npos)
+        {
+            // list all usernames
             cout << "Listing all userNames for socket: " << sockfd << endl;
             api->listAllUsernames(sockfd);
         }
