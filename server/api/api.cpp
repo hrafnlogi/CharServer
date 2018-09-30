@@ -37,9 +37,9 @@ void Api::listAllUsernames(int sockfd)
     sendMessage(0, sockfd, msg);
     for (it = usersToSockets.begin(); it != usersToSockets.end(); it++)
     {
-        if (it->second != sockfd || it->first == "server")
+        if (it->second != sockfd && it->first != "Server")
         {
-            userName = it->first;
+            userName = it->first + "\n";
             n = userName.length();
 
             char buffer[n + 1];
@@ -47,7 +47,7 @@ void Api::listAllUsernames(int sockfd)
             // copy the string to an array so it can be sent
             strcpy(buffer, userName.c_str());
 
-            sendMessage(0, sockfd, buffer);
+            sendMessage(-1, sockfd, buffer);
         }
     }
 }
