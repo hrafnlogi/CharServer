@@ -27,12 +27,16 @@ private:
 public:
   string getUserName(int sockfd);
   int getSocket(string userName);
-  vector<string> getAllUsernames();
+  void listAllUsernames(int sockfd);
+  vector<string> getAllUserNames();
   vector<int> getAllSockets();
 
   void addUserToList(string userName, int sockfd);
-  int sendMessage(int sock, char buffer[]);
-  int sendMessage(vector<int> sockets, char buffer[]);
+
+  int sendMessage(int from, int sockDest, char buffer[]);
+  int sendMessageToAll(int from, char buffer[]);
+
+  string receiveMessage(int sockfd);
 };
 
 #endif

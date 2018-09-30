@@ -15,123 +15,11 @@
 
 using namespace std;
 
-void error(const char *msg)
-{
-    perror(msg);
-    exit(1);
-}
+void error(const char *msg);
 
-void sendMessage(int sock, char buffer[])
-{
+int analyzeMessage(int sockfd, Api *api);
 
-    int n = write(sock, buffer, strlen(buffer));
-
-    if (n < 0)
-        error("ERROR writing to socket");
-}
-
-string readUserName(int sockfd)
-{
-    int receiverSockfd, nBytes, MAXMSG = 512;
-    char buffer[MAXMSG];
-    bzero(buffer, MAXMSG);
-    string userName;
-
-    nBytes = read(sockfd, buffer, MAXMSG);
-
-    if (nBytes < 0)
-    {
-        perror("read");
-        exit(EXIT_FAILURE);
-    }
-    else if (nBytes == 0)
-    {
-        // end of file
-    }
-    else
-    {
-        // message read
-        fprintf(stderr, "Server: got username: %s", buffer);
-        // return username
-        return string(buffer);
-    }
-}
-
-int readClientMessage(int sockfd, map<string, int> *usersToSockets)
-{
-    int receiverSockfd, n, nBytes, MAXMSG = 512;
-    char buffer[MAXMSG];
-    bzero(buffer, MAXMSG);
-    string userName;
-
-    nBytes = read(sockfd, buffer, MAXMSG);
-
-    if (nBytes < 0)
-    {
-        perror("read");
-        exit(EXIT_FAILURE);
-    }
-    else if (nBytes == 0)
-    {
-        // end of file
-        return -1;
-    }
-    else
-    {
-        // message read
-        fprintf(stderr, "Server: got message: %s", buffer);
-        string checkCommand = string(buffer);
-
-        /*switch (checkCommand)
-        {
-        case "WHO":
-            // print out all usernames
-
-            break;
-        }
-        */
-
-        cout << "Sending to all clients.." << endl;
-        map<string, int>::iterator it;
-        for (it = usersToSockets->begin(); it != usersToSockets->end(); it++)
-        {
-            receiverSockfd = it->second;
-            // don't want to send the to the client who sent the message
-            if (receiverSockfd != sockfd)
-            {
-                // get username here,
-                sendMessage(receiverSockfd, buffer);
-            }
-        }
-
-        return 0;
-    }
-}
-
-// creates a socket for a client to connect to given a port and returns
-// the fd to be used
-int createSocket(uint16_t port)
-{
-    int sock;
-    struct sockaddr_in name;
-
-    sock = socket(AF_INET, SOCK_STREAM, 0);
-
-    if (sock < 0)
-        error("ERROR opening socket");
-
-    bzero((char *)&name, sizeof(name));
-
-    name.sin_family = AF_INET;
-    name.sin_addr.s_addr = INADDR_ANY;
-    name.sin_port = htons(port);
-
-    if (bind(sock, (struct sockaddr *)&name,
-             sizeof(name)) < 0)
-        error("ERROR on binding");
-
-    return sock;
-}
+int createSocket(uint16_t port);
 
 int main(int argc, char *argv[])
 {
@@ -207,18 +95,21 @@ int main(int argc, char *argv[])
                     FD_SET(newSockFd, &active_fd_set);
 
                     char test[] = "Choose username:";
-                    api->sendMessage(newSockFd, test);
+                    api->sendMessage(sockfd, newSockFd, test);
+                    cout << "listening for username" << endl;
                     // listen for username
-                    userName = readUserName(newSockFd);
+                    userName = api->receiveMessage(newSockFd);
+                    cout << "USER: " << userName;
                     // map username to its socket. <USERNAME, SOCKET>
-                    usersToSockets[userName] = newSockFd;
-                    // map socket to its user
-                    socketsToUsers[newSockFd] = userName;
+                    api->addUserToList(userName, newSockFd);
+
+                    // print out commands that are available here
                 }
                 else
                 {
+                    //
                     // message arriving on an already connected socket
-                    if (readClientMessage(i, &usersToSockets) < 0)
+                    if (analyzeMessage(i, api) < 0)
                     {
                         close(i);
                         FD_CLR(i, &active_fd_set);
@@ -227,4 +118,84 @@ int main(int argc, char *argv[])
             }
         }
     }
+}
+
+void error(const char *msg)
+{
+    perror(msg);
+    exit(1);
+}
+
+int analyzeMessage(int sockfd, Api *api)
+{
+    int n, nBytes, MAXMSG = 512;
+    char buffer[MAXMSG];
+    bzero(buffer, MAXMSG);
+
+    nBytes = read(sockfd, buffer, MAXMSG);
+
+    if (nBytes < 0)
+    {
+        perror("read");
+        exit(EXIT_FAILURE);
+    }
+    else if (nBytes == 0)
+    {
+        // end of file
+        return -1;
+    }
+    else
+    {
+        // message read
+        fprintf(stderr, "Server: got message: %s", buffer);
+        string checkCommand = string(buffer);
+        cout << "is this a command?: " << checkCommand << endl;
+
+        if (checkCommand.find("WHO") != string::npos)
+        {
+            // list all usersnames
+            cout << "Listing all userNames for socket: " << sockfd << endl;
+            api->listAllUsernames(sockfd);
+        }
+        else if (checkCommand.find("MSG ALL") != string::npos)
+        {
+            cout << "Sending to all clients.." << endl;
+            // send to the user: Message to everybody: <MSG> and read into buffer
+            // and send
+            //api->sendMessageToAll(sockfd, buffer);
+        }
+        else
+        {
+            cout << "No command selected, sending to everybody" << endl;
+        }
+
+        // remove when all commands are beginning to work
+        api->sendMessageToAll(sockfd, buffer);
+
+        return 0;
+    }
+}
+
+// creates a socket
+int createSocket(uint16_t port)
+{
+    int sock;
+    struct sockaddr_in name;
+
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (sock < 0)
+        error("ERROR opening socket");
+
+    bzero((char *)&name, sizeof(name));
+
+    name.sin_family = AF_INET;
+    name.sin_addr.s_addr = INADDR_ANY;
+    name.sin_port = htons(port);
+
+    if (bind(sock, (struct sockaddr *)&name,
+             sizeof(name)) < 0)
+        error("ERROR on binding");
+
+    return sock;
 }
