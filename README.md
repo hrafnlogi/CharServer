@@ -27,11 +27,11 @@ Before running:
 Then:
 
 ```
-    server run instructions here
+    ./server
 ```
 
 ### Client
 
 ```
-    client run instructions here
+    ./client localhost 23001 23002 23003
 ```
