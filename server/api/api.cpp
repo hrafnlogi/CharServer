@@ -37,7 +37,7 @@ void Api::listAllUsernames(int sockfd)
     sendMessage(0, sockfd, msg);
     for (it = usersToSockets.begin(); it != usersToSockets.end(); it++)
     {
-        if (it->second != sockfd)
+        if (it->second != sockfd || it->first == "server")
         {
             userName = it->first;
             n = userName.length();
@@ -178,8 +178,9 @@ bool Api::validPorts(vector<int> ports)
 
 void Api::leaveServer(int sockfd)
 {
-    // wut
-    close(sockfd);
+    string userName = getUserName(sockfd);
+    usersToSockets.erase(userName);
+    socketsToUsers.erase(sockfd);
 }
 
 string Api::arrayToString(char arr[])

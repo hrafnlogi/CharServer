@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
 
     // our socket
     sockfd = createSocket(portSequence.at(2));
+    api->addUserToList("Server", sockfd);
 
     sockfd2 = createSocket(portSequence.at(0));
     sockfd3 = createSocket(portSequence.at(1));
@@ -122,8 +123,8 @@ int main(int argc, char *argv[])
                         // sets the new socket as active in the active_fd_set
                         FD_SET(newSockFd, &active_fd_set);
 
-                        char test[] = "Choose username:";
-                        api->sendMessage(sockfd, newSockFd, test);
+                        char welcomeMsg[] = "please choose a username:";
+                        api->sendMessage(sockfd, newSockFd, welcomeMsg);
                         cout << "listening for username" << endl;
                         // listen for username
                         userName = api->receiveMessage(newSockFd);
@@ -205,7 +206,10 @@ int analyzeMessage(int sockfd, Api *api)
         }
         else if (messageSeq.at(0) == "LEAVE")
         {
+            char msg[] = "";
+            api->sendMessage(api->getSocket("server"), sockfd, msg);
             api->leaveServer(sockfd);
+
             cout << sockfd << " left the server" << endl;
         }
         else if (messageSeq.at(0) == "WHO")
@@ -234,7 +238,7 @@ int analyzeMessage(int sockfd, Api *api)
         }
         else
         {
-            cout << "No command selected, sending to everybody" << endl;
+            cout << "No command selected" << endl;
         }
 
         return 0;
