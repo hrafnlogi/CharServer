@@ -196,7 +196,14 @@ int analyzeMessage(int sockfd, Api *api)
 
         if (messageSeq.at(0) == "ID")
         {
-            cout << "server id: " << api->getServerId() << endl;
+            cout << "Server id: " << api->getServerId() << endl;
+
+            string servId = "Server id: ";
+            servId += api->getServerId();
+            int n = servId.length();
+            char test[n + 1];
+            strcpy(test, servId.c_str());
+            api->sendMessage(-1, sockfd, test);
             // provide a unique ID for the server
         }
         else if (messageSeq.at(0) == "CONNECT")
@@ -235,6 +242,12 @@ int analyzeMessage(int sockfd, Api *api)
         else if (messageSeq.at(0) == "CHANGE" && messageSeq.at(1) == "ID")
         {
             api->giveServerNewId();
+            string servId = "ID changed to: ";
+            servId += api->getServerId();
+            int n = servId.length();
+            char test[n + 1];
+            strcpy(test, servId.c_str());
+            api->sendMessage(-1, sockfd, test);
         }
         else
         {
