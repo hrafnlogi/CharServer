@@ -189,3 +189,15 @@ string Api::arrayToString(char arr[])
     msg.erase(remove(msg.begin(), msg.end(), '\n'), msg.end());
     return msg;
 }
+
+string Api::cleanString(string s)
+{
+    s.erase(remove(s.begin(), s.end(), '\n'), s.end());
+    return s;
+}
+
+void Api::printCommands(int sockfd)
+{
+    char msg[] = "Available commands: ID, LEAVE, WHO, MSG username, MSG ALL, CHANGE ID";
+    sendMessage(getSocket("Server"), sockfd, msg);
+}

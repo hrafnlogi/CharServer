@@ -128,10 +128,11 @@ int main(int argc, char *argv[])
                         cout << "listening for username" << endl;
                         // listen for username
                         userName = api->receiveMessage(newSockFd);
-                        cout << "USER: " << userName;
+                        userName = api->cleanString(userName);
+                        cout << "USER: " << userName << endl;
                         // map username to its socket. <USERNAME, SOCKET>
                         api->addUserToList(userName, newSockFd);
-
+                        api->printCommands(newSockFd);
                         // print out commands that are available here
                     }
                 }
@@ -213,9 +214,10 @@ int analyzeMessage(int sockfd, Api *api)
         }
         else if (messageSeq.at(0) == "LEAVE")
         {
-            char msg[] = "";
-            api->sendMessage(api->getSocket("server"), sockfd, msg);
             api->leaveServer(sockfd);
+
+            char msg[] = "A user has left the server";
+            api->sendMessageToAll(api->getSocket("Server"), msg);
 
             cout << sockfd << " left the server" << endl;
         }
@@ -238,6 +240,22 @@ int analyzeMessage(int sockfd, Api *api)
             // send to the user: Message to everybody: <MSG> and read into buffer
             // and send
             api->sendMessageToAll(sockfd, restOfMsg);
+        }
+        // EXAMPLE: MSG jackie hello
+        else if (messageSeq.at(0) == "MSG")
+        {
+            string username = messageSeq.at(1);
+            int len = 4 + username.length();
+            char restOfMsg[strlen(buffer) - len];
+
+            for (int i = 0; i < strlen(buffer) - (len - 1); i++)
+            {
+                restOfMsg[i] = buffer[i + len];
+            }
+
+            int userSockFd = api->getSocket(username);
+
+            api->sendMessage(sockfd, userSockFd, restOfMsg);
         }
         else if (messageSeq.at(0) == "CHANGE" && messageSeq.at(1) == "ID")
         {

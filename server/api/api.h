@@ -53,8 +53,11 @@ public:
 
   void leaveServer(int sockfd);
 
-  // did this function to erase newline and to make life easier
+  // did these functions to erase newline and to make life easier
   string arrayToString(char arr[]);
+  string cleanString(string s);
+
+  void printCommands(int sockfd);
 };
 
 #endif
