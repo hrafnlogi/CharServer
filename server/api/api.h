@@ -13,6 +13,7 @@
 #include <arpa/inet.h>
 #include <map>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 
@@ -39,6 +40,11 @@ public:
   string receiveMessage(int sockfd);
 
   bool validPorts(vector<int> ports);
+
+  void leaveServer(int sockfd);
+
+  // did this function to erase newline and to make life easier
+  string arrayToString(char arr[]);
 };
 
 #endif

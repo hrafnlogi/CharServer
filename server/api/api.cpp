@@ -9,6 +9,7 @@ string Api::getUserName(int sockfd)
     {
         return search->second;
     }
+    return "";
 }
 
 // get a single socket given a username
@@ -20,6 +21,8 @@ int Api::getSocket(string userName)
     {
         return search->second;
     }
+
+    return -1;
 }
 
 // lists all users for the socket that asked for it
@@ -27,20 +30,25 @@ int Api::getSocket(string userName)
 void Api::listAllUsernames(int sockfd)
 {
     map<string, int>::iterator it;
+    char msg[] = "The users on this server are: ";
     string userName;
     int n;
 
+    sendMessage(0, sockfd, msg);
     for (it = usersToSockets.begin(); it != usersToSockets.end(); it++)
     {
-        userName = it->first;
-        n = userName.length();
+        if (it->second != sockfd)
+        {
+            userName = it->first;
+            n = userName.length();
 
-        char buffer[n + 1];
+            char buffer[n + 1];
 
-        // copy the string to an array so it can be sent
-        strcpy(buffer, userName.c_str());
+            // copy the string to an array so it can be sent
+            strcpy(buffer, userName.c_str());
 
-        sendMessage(0, sockfd, buffer);
+            sendMessage(0, sockfd, buffer);
+        }
     }
 }
 
@@ -64,7 +72,19 @@ void Api::addUserToList(string userName, int sockfd)
 // send a message to a single client
 int Api::sendMessage(int from, int sockDest, char buffer[])
 {
-    return write(sockDest, buffer, strlen(buffer));
+    string userName = getUserName(from);
+    userName.erase(remove(userName.begin(), userName.end(), '\n'), userName.end());
+
+    string concat = userName + ": " + arrayToString(buffer);
+
+    int n = concat.length();
+
+    char finalMessage[n + 1];
+
+    // copy the string to an array so it can be sent
+    strcpy(finalMessage, concat.c_str());
+
+    return write(sockDest, finalMessage, strlen(finalMessage));
 }
 
 // send a message to all clients
@@ -124,4 +144,17 @@ bool Api::validPorts(vector<int> ports)
     }
 
     return true;
+}
+
+void Api::leaveServer(int sockfd)
+{
+    // wut
+    //close(sockfd);
+}
+
+string Api::arrayToString(char arr[])
+{
+    string msg(arr);
+    msg.erase(remove(msg.begin(), msg.end(), '\n'), msg.end());
+    return msg;
 }

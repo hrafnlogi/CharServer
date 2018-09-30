@@ -159,6 +159,8 @@ int analyzeMessage(int sockfd, Api *api)
     int n, nBytes, MAXMSG = 512;
     char buffer[MAXMSG];
     bzero(buffer, MAXMSG);
+    vector<string> messageSeq;
+    string delimiter, token;
 
     nBytes = read(sockfd, buffer, MAXMSG);
 
@@ -176,28 +178,42 @@ int analyzeMessage(int sockfd, Api *api)
     {
         // message read
         fprintf(stderr, "Server: got message: %s", buffer);
-        string checkCommand = string(buffer);
+        string checkCommand = api->arrayToString(buffer);
 
-        if (checkCommand.find("ID") != string::npos)
+        // add all words to vector to check for command
+        delimiter = " ";
+        size_t pos = 0;
+        while ((pos = checkCommand.find(delimiter)) != std::string::npos)
         {
+            token = checkCommand.substr(0, pos);
+            messageSeq.push_back(token);
+            checkCommand.erase(0, pos + delimiter.length());
+        }
+        messageSeq.push_back(checkCommand);
+        // end weird code
+
+        if (messageSeq.at(0) == "ID")
+        {
+            cout << "ID HERE ERER ERE RE" << endl;
             // provide a unique ID for the server
         }
-        else if (checkCommand.find("CONNECT") != string::npos)
+        else if (messageSeq.at(0) == "CONNECT")
         {
             // CONNECT <USER>
             // start a chat with a user
         }
-        else if (checkCommand.find("LEAVE") != string::npos)
+        else if (messageSeq.at(0) == "LEAVE")
         {
-            // disconnect this user
+            api->leaveServer(sockfd);
+            cout << sockfd << " left the server" << endl;
         }
-        else if (checkCommand.find("WHO") != string::npos)
+        else if (messageSeq.at(0) == "WHO")
         {
             // list all usernames
-            cout << "Listing all userNames for socket: " << sockfd << endl;
+            cout << "Listing all usernames for socket: " << sockfd << endl;
             api->listAllUsernames(sockfd);
         }
-        else if (checkCommand.find("MSG ALL") != string::npos)
+        else if (messageSeq.at(0) == "MSG" && messageSeq.at(1) == "ALL")
         {
             cout << "Sending to all clients.." << endl;
             // send to the user: Message to everybody: <MSG> and read into buffer
