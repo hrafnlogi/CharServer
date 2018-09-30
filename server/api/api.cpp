@@ -69,6 +69,15 @@ void Api::addUserToList(string userName, int sockfd)
     socketsToUsers[sockfd] = userName;
 }
 
+void Api::giveServerNewId()
+{
+    string str = "fortune -s";
+    string fortuneQuote = exec("fortune -s");
+    int randomIdNumber = rand() % 1000000 + 1;
+
+    idOfServer = to_string(randomIdNumber) + " " + fortuneQuote + " group23";
+}
+
 // send a message to a single client
 int Api::sendMessage(int from, int sockDest, char buffer[])
 {
@@ -126,6 +135,26 @@ string Api::receiveMessage(int sockfd)
         // return message
         return string(buffer);
     }
+}
+
+string Api::getServerId()
+{
+    return idOfServer;
+}
+
+string Api::exec(const char *cmd)
+{
+    std::array<char, 128> buffer;
+    std::string result;
+    std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
+    if (!pipe)
+        throw std::runtime_error("popen() failed!");
+    while (!feof(pipe.get()))
+    {
+        if (fgets(buffer.data(), 128, pipe.get()) != nullptr)
+            result += buffer.data();
+    }
+    return result;
 }
 
 // checks if the sequence of the ports are correct
