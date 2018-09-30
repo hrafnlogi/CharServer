@@ -216,10 +216,17 @@ int analyzeMessage(int sockfd, Api *api)
         }
         else if (messageSeq.at(0) == "MSG" && messageSeq.at(1) == "ALL")
         {
-            cout << "Sending to all clients.." << endl;
+            // rest of msg is all the characters after the command
+            char restOfMsg[strlen(buffer) - 7];
+
+            for (int i = 0; i < strlen(buffer) - 8; i++)
+            {
+                restOfMsg[i] = buffer[i + 7];
+            }
+
             // send to the user: Message to everybody: <MSG> and read into buffer
             // and send
-            //api->sendMessageToAll(sockfd, buffer);
+            api->sendMessageToAll(sockfd, restOfMsg);
         }
         else if (messageSeq.at(0) == "CHANGE" && messageSeq.at(1) == "ID")
         {
@@ -229,9 +236,6 @@ int analyzeMessage(int sockfd, Api *api)
         {
             cout << "No command selected, sending to everybody" << endl;
         }
-
-        // remove when all commands are beginning to work
-        api->sendMessageToAll(sockfd, buffer);
 
         return 0;
     }

@@ -178,7 +178,7 @@ bool Api::validPorts(vector<int> ports)
 void Api::leaveServer(int sockfd)
 {
     // wut
-    //close(sockfd);
+    close(sockfd);
 }
 
 string Api::arrayToString(char arr[])
