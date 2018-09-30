@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
     map<int, string> socketsToUsers;
 
     Api *api = new Api();
+    api->giveServerNewId();
 
     // our socket
     sockfd = createSocket(portSequence.at(2));
@@ -194,7 +195,7 @@ int analyzeMessage(int sockfd, Api *api)
 
         if (messageSeq.at(0) == "ID")
         {
-            cout << "ID HERE ERER ERE RE" << endl;
+            cout << "server id: " << api->getServerId() << endl;
             // provide a unique ID for the server
         }
         else if (messageSeq.at(0) == "CONNECT")
@@ -219,6 +220,10 @@ int analyzeMessage(int sockfd, Api *api)
             // send to the user: Message to everybody: <MSG> and read into buffer
             // and send
             //api->sendMessageToAll(sockfd, buffer);
+        }
+        else if (messageSeq.at(0) == "CHANGE" && messageSeq.at(1) == "ID")
+        {
+            api->giveServerNewId();
         }
         else
         {

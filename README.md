@@ -18,6 +18,14 @@
 
 ### Server
 
+Before running:
+
+```
+    sudo apt install fortune-mod
+```
+
+Then:
+
 ```
     server run instructions here
 ```
